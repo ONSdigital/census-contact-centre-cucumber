@@ -81,12 +81,11 @@ public class TestFulfilmentsEndpoints extends TestEndpointsFFData {
         Integer.valueOf(fulfilmentDTOList.size()));
     fulfilmentDTOList.forEach(
         fulfilment -> {
-          assertEquals(
-              "Fulfilment should be of correct caseType",
-              caseType,
-              fulfilment.getCaseType().name());
           assertTrue(
               "Fulfilment should be of correct caseType",
+              fulfilment.getCaseTypes().contains(CaseType.valueOf(caseType)));
+          assertTrue(
+              "Fulfilment should be for correct region",
               fulfilment.getRegions().contains(Region.valueOf(region)));
         });
   }
@@ -214,9 +213,19 @@ public class TestFulfilmentsEndpoints extends TestEndpointsFFData {
     return productService
         .getProducts()
         .stream()
-        .filter(p1 -> p1.getCaseType().name().equalsIgnoreCase(caseType))
+        .filter(p1 -> p1.getCaseTypes().contains(Product.CaseType.valueOf(caseType)))
         .filter(p2 -> p2.getRegions().contains(Product.Region.valueOf(region)))
         .filter(p3 -> p3.getRequestChannels().contains(Product.RequestChannel.valueOf("CC")))
         .collect(Collectors.toList());
   }
+
+  //  private List<Product> getExpectedProducts() throws CTPException {
+  //    return productService
+  //        .getProducts()
+  //        .stream()
+  //        .filter(p1 -> p1.getCaseType().name().equalsIgnoreCase(caseType))
+  //        .filter(p2 -> p2.getRegions().contains(Product.Region.valueOf(region)))
+  //        .filter(p3 -> p3.getRequestChannels().contains(Product.RequestChannel.valueOf("CC")))
+  //        .collect(Collectors.toList());
+  //  }
 }

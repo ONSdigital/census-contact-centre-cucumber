@@ -16,9 +16,6 @@ Feature: Test Contact centre Fulfilments Endpoints
       | "HH"      | "E"           |
       | "HH"      | "N"           |
       | "HH"      | "W"           |
-      | "HI"      | "E"           |
-      | "HI"      | "N"           |
-      | "HI"      | "W"           |
       | "CE"      | "E"           |
       | "CE"      | "N"           |
       | "CE"      | "W"           |
@@ -37,6 +34,5 @@ Feature: Test Contact centre Fulfilments Endpoints
 
     Examples:
       | address                             | uprn           | case_ids                                 |
-      | "58A, Magdalen Road"                |"10013041853"   | ""                                       |
       | "70, Magdalen Street"               |"100040222798"  | "3305e937-6fb1-4ce1-9d4c-077f147789de"   |
       | "33 Serge Court"                    |"100041131297"  | "03f58cb5-9af4-4d40-9d60-c124c5bddfff"   |
