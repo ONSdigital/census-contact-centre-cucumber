@@ -296,7 +296,7 @@ public class TestCaseEndpoints extends TestEndpoints {
       fail();
       System.exit(0);
     } catch (Exception e) {
-      log.error("LAUNCHING EQ FOR HH HAS FAILED: An unexpected has occurred.");
+      log.error("LAUNCHING EQ FOR HH HAS FAILED: An unexpected error has occurred.");
       log.error(e.getMessage());
       fail();
       System.exit(0);
@@ -322,7 +322,7 @@ public class TestCaseEndpoints extends TestEndpoints {
       fail();
       System.exit(0);
     } catch (Exception e) {
-      log.error("LAUNCHING EQ FOR HH HAS FAILED: An unexpected has occurred.");
+      log.error("LAUNCHING EQ FOR HH HAS FAILED: An unexpected error has occurred.");
       log.error(e.getMessage());
       fail();
       System.exit(0);
@@ -473,7 +473,7 @@ public class TestCaseEndpoints extends TestEndpoints {
     /*
      * The following assert will need to be changed if the form_type value, which is hard-coded in the CCSVC, is updated
      */
-    assertEquals("Must have the correct form type", "individual_gb_eng", result1.get("form_type"));
+    assertEquals("Must have the correct form type", "H", result1.get("form_type"));
 
     assertNotEquals("Must have different tx_id values", result1.get("tx_id"), result2.get("tx_id"));
     assertEquals("Must have the correct ru_ref value", "100041045599", result1.get("ru_ref"));
@@ -588,7 +588,7 @@ public class TestCaseEndpoints extends TestEndpoints {
     /*
      * The following assert will need to be changed if the form_type value, which is hard-coded in the CCSVC, is updated
      */
-    assertEquals("Must have the correct form type", "individual_gb_eng", result1.get("form_type"));
+    assertEquals("Must have the correct form type", "H", result1.get("form_type"));
 
     assertNotEquals("Must have different tx_id values", result1.get("tx_id"), result2.get("tx_id"));
     assertEquals("Must have the correct ru_ref value", "100041045599", result1.get("ru_ref"));
