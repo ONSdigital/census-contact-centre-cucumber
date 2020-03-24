@@ -169,7 +169,7 @@ casedata:
             "surveyType": "CENSUS"
           },
           {
-             "caseRef": "987654",
+             "caseRef": "984654",
              "arid": "2344266233",
              "estabArid": "AABBCC",
              "estabType": "ET",
@@ -209,5 +209,263 @@ casedata:
              "state": "ACTIONABLE",
              "collectionExerciseId": "49871667-117d-4a63-9101-f6a0660f73f6",
              "surveyType": "CENSUS"
+           },
+           {
+             "caseRef": "983655",
+             "arid": "2344266239",
+             "estabArid": "AABBCC",
+             "estabType": "ET",
+             "uprn": "100140222798",
+             "createdDateTime": "2019-04-14T13:45:26.564+01:00",
+             "addressLine1": "33",
+             "addressLine2": "Serge Court",
+             "addressLine3": "Commercial Street",
+             "townName": "Exeter",
+             "postcode": "EX2 4EB",
+             "organisationName": "ON",
+             "addressLevel": "E",
+             "abpCode": "AACC",
+             "latitude": "41.40338",
+             "longitude": "2.17403",
+             "oa": "EE22",
+             "lsoa": "x1",
+             "msoa": "x2",
+             "lad": "H1",
+             "caseEvents": [
+              {
+                "id": "209",
+                "eventType": "CASE_UPDATED",
+                "description": "Initial creation of case",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              },
+              {
+                "id": "210",
+                "eventType": null,
+                "description": "Create Household Visit",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              }
+              ],
+             "id": "3305e937-6fb2-4ce1-9d4c-077f147789de",
+             "caseType": "HH",
+             "region": "E",
+             "state": "ACTIONABLE",
+             "collectionExerciseId": "49871667-117d-4a63-9101-f6a0660f73f6",
+             "surveyType": "CENSUS",
+             "allowedDeliveryChannels": ["SMS"]
+           },
+           {
+             "caseRef": "982655",
+             "arid": "2344266239",
+             "estabArid": "AABBCC",
+             "estabType": "ET",
+             "uprn": "100240222798",
+             "createdDateTime": "2019-04-14T13:45:26.564+01:00",
+             "addressLine1": "33",
+             "addressLine2": "Serge Court",
+             "addressLine3": "Commercial Street",
+             "townName": "Exeter",
+             "postcode": "EX2 4EB",
+             "organisationName": "ON",
+             "addressLevel": "E",
+             "abpCode": "AACC",
+             "latitude": "41.40338",
+             "longitude": "2.17403",
+             "oa": "EE22",
+             "lsoa": "x1",
+             "msoa": "x2",
+             "lad": "H1",
+             "caseEvents": [
+              {
+                "id": "209",
+                "eventType": "CASE_UPDATED",
+                "description": "Initial creation of case",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              },
+              {
+                "id": "210",
+                "eventType": null,
+                "description": "Create Household Visit",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              }
+              ],
+             "id": "3305e937-6fb3-4ce1-9d4c-077f147789de",
+             "caseType": "CE",
+             "region": "E",
+             "state": "ACTIONABLE",
+             "collectionExerciseId": "3305e937-6fb3-4ce1-9d4c-077f147789de",
+             "surveyType": "CENSUS",
+             "allowedDeliveryChannels": ["SMS"]
+           },
+           {
+             "caseRef": "982655",
+             "arid": "2344266239",
+             "estabArid": "AABBCC",
+             "estabType": "ET",
+             "uprn": "100340222798",
+             "createdDateTime": "2019-04-14T13:45:26.564+01:00",
+             "addressLine1": "33",
+             "addressLine2": "Serge Court",
+             "addressLine3": "Commercial Street",
+             "townName": "Exeter",
+             "postcode": "EX2 4EB",
+             "organisationName": "ON",
+             "addressLevel": "E",
+             "abpCode": "AACC",
+             "latitude": "41.40338",
+             "longitude": "2.17403",
+             "oa": "EE22",
+             "lsoa": "x1",
+             "msoa": "x2",
+             "lad": "H1",
+             "caseEvents": [
+              {
+                "id": "209",
+                "eventType": "CASE_UPDATED",
+                "description": "Initial creation of case",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              },
+              {
+                "id": "210",
+                "eventType": null,
+                "description": "Create Household Visit",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              }
+              ],
+             "id": "3305e937-6fb4-4ce1-9d4c-077f147789de",
+             "caseType": "HH",
+             "region": "W",
+             "state": "ACTIONABLE",
+             "collectionExerciseId": "3305e937-6fb3-4ce1-9d4c-077f147789de",
+             "surveyType": "CENSUS",
+             "allowedDeliveryChannels": ["SMS"]
+           },
+           {
+             "caseRef": "982655",
+             "arid": "2344266239",
+             "estabArid": "AABBCC",
+             "estabType": "ET",
+             "uprn": "100440222798",
+             "createdDateTime": "2019-04-14T13:45:26.564+01:00",
+             "addressLine1": "33",
+             "addressLine2": "Serge Court",
+             "addressLine3": "Commercial Street",
+             "townName": "Exeter",
+             "postcode": "EX2 4EB",
+             "organisationName": "ON",
+             "addressLevel": "E",
+             "abpCode": "AACC",
+             "latitude": "41.40338",
+             "longitude": "2.17403",
+             "oa": "EE22",
+             "lsoa": "x1",
+             "msoa": "x2",
+             "lad": "H1",
+             "caseEvents": [
+              {
+                "id": "209",
+                "eventType": "CASE_UPDATED",
+                "description": "Initial creation of case",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              },
+              {
+                "id": "210",
+                "eventType": null,
+                "description": "Create Household Visit",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              }
+              ],
+             "id": "3305e937-6fb5-4ce1-9d4c-077f147789de",
+             "caseType": "CE",
+             "region": "W",
+             "state": "ACTIONABLE",
+             "collectionExerciseId": "3305e937-6fb3-4ce1-9d4c-077f147789de",
+             "surveyType": "CENSUS",
+             "allowedDeliveryChannels": ["SMS"]
+           },
+           {
+             "caseRef": "982655",
+             "arid": "2344266239",
+             "estabArid": "AABBCC",
+             "estabType": "ET",
+             "uprn": "100640222798",
+             "createdDateTime": "2019-04-14T13:45:26.564+01:00",
+             "addressLine1": "33",
+             "addressLine2": "Serge Court",
+             "addressLine3": "Commercial Street",
+             "townName": "Exeter",
+             "postcode": "EX2 4EB",
+             "organisationName": "ON",
+             "addressLevel": "E",
+             "abpCode": "AACC",
+             "latitude": "41.40338",
+             "longitude": "2.17403",
+             "oa": "EE22",
+             "lsoa": "x1",
+             "msoa": "x2",
+             "lad": "H1",
+             "caseEvents": [
+              {
+                "id": "209",
+                "eventType": "CASE_UPDATED",
+                "description": "Initial creation of case",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              },
+              {
+                "id": "210",
+                "eventType": null,
+                "description": "Create Household Visit",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              }
+              ],
+             "id": "3305e937-6fb7-4ce1-9d4c-077f147789de",
+             "caseType": "SPG",
+             "region": "N",
+             "state": "ACTIONABLE",
+             "collectionExerciseId": "3305e937-6fb3-4ce1-9d4c-077f147789de",
+             "surveyType": "CENSUS",
+             "allowedDeliveryChannels": ["SMS"]
+           },
+           {
+             "caseRef": "982655",
+             "arid": "2344266239",
+             "estabArid": "AABBCC",
+             "estabType": "ET",
+             "uprn": "100540222798",
+             "createdDateTime": "2019-04-14T13:45:26.564+01:00",
+             "addressLine1": "33",
+             "addressLine2": "Serge Court",
+             "addressLine3": "Commercial Street",
+             "townName": "Exeter",
+             "postcode": "EX2 4EB",
+             "organisationName": "ON",
+             "addressLevel": "E",
+             "abpCode": "AACC",
+             "latitude": "41.40338",
+             "longitude": "2.17403",
+             "oa": "EE22",
+             "lsoa": "x1",
+             "msoa": "x2",
+             "lad": "H1",
+             "caseEvents": [
+              {
+                "id": "209",
+                "eventType": "CASE_UPDATED",
+                "description": "Initial creation of case",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              },
+              {
+                "id": "210",
+                "eventType": null,
+                "description": "Create Household Visit",
+                "createdDateTime": "2019-04-14T13:45:26.564+01:00"
+              }
+              ],
+             "id": "3305e937-6fb6-4ce1-9d4c-077f147789de",
+             "caseType": "SPG",
+             "region": "N",
+             "state": "ACTIONABLE",
+             "collectionExerciseId": "3305e937-6fb3-4ce1-9d4c-077f147789de",
+             "surveyType": "CENSUS",
+             "allowedDeliveryChannels": ["SMS"]
            }
      ]'

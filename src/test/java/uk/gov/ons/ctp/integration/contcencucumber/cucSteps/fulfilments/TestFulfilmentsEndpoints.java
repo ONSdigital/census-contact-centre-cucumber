@@ -1,14 +1,8 @@
 package uk.gov.ons.ctp.integration.contcencucumber.cucSteps.fulfilments;
 
-import static org.junit.Assert.*;
-
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -20,6 +14,13 @@ import uk.gov.ons.ctp.integration.common.product.model.Product;
 import uk.gov.ons.ctp.integration.contactcentresvc.representation.*;
 import uk.gov.ons.ctp.integration.contcencucumber.cucSteps.ResetMockCaseApiAndPostCasesBase;
 import uk.gov.ons.ctp.integration.contcencucumber.main.service.ProductService;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
 
 public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
@@ -33,17 +34,9 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
   @Autowired private ProductService productService;
 
-  @Given("I Search fulfilments")
-  public void i_Search_fulfilments() {
-    searchFulfillments(caseDTO.getCaseType(), caseDTO.getRegion(), "true");
-  }
-
-  @Given("I Search fulfilments {string} {string} {string}")
-  public void i_Search_fulfilments(String caseType, String region, String individual) {
-    searchFulfillments(caseType, region, individual);
-  }
-
-  private void searchFulfillments(String caseType, String region, String individual) {
+  @When("I Search fulfilments {string} {string} {string}")
+  public void i_Search_fulfilments(
+      final String caseType, final String region, final String individual) {
     final UriComponentsBuilder builder =
         UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
             .port(ccBasePort)
@@ -51,27 +44,18 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
             .queryParam("caseType", caseType)
             .queryParam("region", region)
             .queryParam("individual", individual);
-
-    try {
-      ResponseEntity<List<FulfilmentDTO>> fulfilmentResponse =
-          getRestTemplate()
-              .exchange(
-                  builder.build().encode().toUri(),
-                  HttpMethod.GET,
-                  null,
-                  new ParameterizedTypeReference<List<FulfilmentDTO>>() {});
-      fulfilmentDTOList = fulfilmentResponse.getBody();
-    } catch (HttpClientErrorException httpClientErrorException) {
-      fail(httpClientErrorException.getMessage());
-    }
+    searchFulfillments(builder);
   }
 
   @Then("A list of fulfilments is returned of the correct products {string} {string} {string}")
   public void a_list_of_fulfilments_is_returned_of_the_correct_products(
-      String caseType, String region, String individual) throws CTPException {
+      final String caseType, final String region, final String individual) throws CTPException {
 
+    boolean isIndividual = Boolean.parseBoolean(individual);
     this.requestChannel = "CC";
-    List<Product> expectedProducts = getExpectedProducts(caseType, region, individual);
+    List<DeliveryChannel> deliveryChannels = new ArrayList<>();
+    List<Product> expectedProducts =
+        getExpectedProducts(caseType, region, isIndividual, deliveryChannels);
 
     assertEquals(
         "Fulfilments list size should be " + expectedProducts.size(),
@@ -99,7 +83,7 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
   }
 
   @Given("I have a valid address search String {string}")
-  public void i_have_a_valid_address_search_String(String addressSearchString) {
+  public void i_have_a_valid_address_search_String(final String addressSearchString) {
     this.addressSearchString = addressSearchString;
   }
 
@@ -142,6 +126,11 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
   @When("I Search cases By UPRN")
   public void i_Search_cases_By_UPRN() {
+    getCasesByUPRN();
+  }
+
+  private void getCasesByUPRN() {
+
     final UriComponentsBuilder builder =
         UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
             .port(ccBasePort)
@@ -163,7 +152,11 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
   }
 
   @Then("the correct cases for my UPRN are returned {string}")
-  public void the_correct_cases_for_my_UPRN_are_returned(String caseIds) {
+  public void the_correct_cases_for_my_UPRN_are_returned(final String caseIds) {
+    getValidCasesByCaseIds(caseIds);
+  }
+
+  private void getValidCasesByCaseIds(final String caseIds) {
     if (caseIds.isEmpty()) {
       assertNull(caseDTOList);
       caseDTOList = new ArrayList<>();
@@ -195,10 +188,72 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
     requestChannel = "CC";
   }
 
+  @When("I Search fulfilments")
+  public void i_Search_fulfilments() {
+    final UriComponentsBuilder builder =
+        UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
+            .port(ccBasePort)
+            .pathSegment("/fulfilments")
+            .queryParam("caseType", caseDTO.getCaseType())
+            .queryParam("region", caseDTO.getRegion())
+            .queryParam("individual", getIndividualStatusAndCaseType(caseDTO));
+    searchFulfillments(builder);
+  }
+
+  @When("I Search fulfilments {string} {string}")
+  public void i_Search_fulfilments(final String deliveryChannel, final String individual) {
+    boolean isIndividual = Boolean.parseBoolean(individual);
+    final UriComponentsBuilder builder =
+        UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
+            .port(ccBasePort)
+            .pathSegment("/fulfilments")
+            .queryParam("caseType", caseDTO.getCaseType())
+            .queryParam("region", caseDTO.getRegion())
+            .queryParam("individual", isIndividual)
+            .queryParam("deliveryChannel", deliveryChannel);
+
+    searchFulfillments(builder);
+  }
+
+  private void searchFulfillments(final UriComponentsBuilder builder) {
+    try {
+      ResponseEntity<List<FulfilmentDTO>> fulfilmentResponse =
+          getRestTemplate()
+              .exchange(
+                  builder.build().encode().toUri(),
+                  HttpMethod.GET,
+                  null,
+                  new ParameterizedTypeReference<List<FulfilmentDTO>>() {});
+      fulfilmentDTOList = fulfilmentResponse.getBody();
+    } catch (HttpClientErrorException httpClientErrorException) {
+      fail(httpClientErrorException.getMessage());
+    }
+  }
+
   @Then("the correct fulfilments are returned for my case")
   public void the_correct_fulfilments_are_returned_for_my_case() throws CTPException {
+    correctFulfilmentsAreReturnedForCase(getIndividualStatusAndCaseType(caseDTO));
+  }
+
+  @Then("the correct fulfilments are returned for my case {string} {string} {string} {string}")
+  public void the_correct_fulfilments_are_returned_for_my_case(
+      final String caseType,
+      final String region,
+      final String deliveryChannel,
+      final String individual)
+      throws CTPException {
+    final boolean isIndividual = Boolean.parseBoolean(individual);
+    caseDTO.setAllowedDeliveryChannels(Arrays.asList(DeliveryChannel.valueOf(deliveryChannel)));
+    correctFulfilmentsAreReturnedForCase(isIndividual);
+  }
+
+  private void correctFulfilmentsAreReturnedForCase(boolean individual) throws CTPException {
     List<Product> expectedProducts =
-        getExpectedProducts(caseDTO.getCaseType(), caseDTO.getRegion(), "true");
+        getExpectedProducts(
+            caseDTO.getCaseType(),
+            caseDTO.getRegion(),
+            individual,
+            caseDTO.getAllowedDeliveryChannels());
     List<String> expectedCodes =
         expectedProducts.stream().map(ex -> ex.getFulfilmentCode()).collect(Collectors.toList());
 
@@ -216,8 +271,41 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
     }
   }
 
+  private boolean getIndividualStatusAndCaseType(final CaseDTO caseDTO) {
+    boolean isIndividual = false;
+    if (caseDTO.getCaseType().equalsIgnoreCase("HI")) {
+      isIndividual = true;
+      caseDTO.setCaseType("HH");
+    }
+    if (caseDTO.getCaseType().equalsIgnoreCase("CI")) {
+      isIndividual = true;
+      caseDTO.setCaseType("CE");
+    }
+    return isIndividual;
+  }
+
+  @Given("I have a valid UPRN provided by a CC advisor {string}")
+  public void i_have_a_valid_UPRN_provided_by_a_CC_advisor(final String uprn) {
+    this.uprn = uprn;
+  }
+
+  @Then("I have a valid case from my search UPRN {string}")
+  public void i_have_a_valid_case_from_my_search_UPRN(final String caseId) {
+    requestChannel = "CC";
+    getCasesByUPRN();
+    getValidCasesByCaseIds(caseId);
+    assertTrue(
+        "There should be 1 case for given uprn: " + uprn + " but found:" + caseDTOList.size(),
+        caseDTOList.size() == 1);
+    caseDTO = caseDTOList.get(0);
+  }
+
   private List<Product> getExpectedProducts(
-      final String caseType, final String region, final String individual) throws CTPException {
+      final String caseType,
+      final String region,
+      final boolean individual,
+      final List<DeliveryChannel> deliveryChannels)
+      throws CTPException {
 
     return productService
         .getProducts()
@@ -225,7 +313,8 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
         .filter(p1 -> (containsCaseType(p1, caseType)))
         .filter(p2 -> (containsRegion(p2, region)))
         .filter(p3 -> containsChannel(p3))
-        .filter(p4 -> p4.getIndividual().equals(Boolean.parseBoolean(individual)))
+        .filter(p4 -> p4.getIndividual().equals(individual))
+        .filter(p5 -> (containsDeliveryChannel(p5, deliveryChannels)))
         .collect(Collectors.toList());
   }
 
@@ -257,5 +346,22 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
       }
     }
     return containsChannel;
+  }
+
+  private boolean containsDeliveryChannel(
+      final Product product, final List<DeliveryChannel> deliveryChannels) {
+    if (deliveryChannels.isEmpty()) {
+      return true;
+    }
+    List<String> deliveryChannelNames =
+        deliveryChannels.stream().map(d -> d.name()).collect(Collectors.toList());
+    boolean containsDeliverChannel = false;
+
+    for (final String deliveryChannel : deliveryChannelNames) {
+      if (deliveryChannel.equalsIgnoreCase(product.getDeliveryChannel().name())) {
+        containsDeliverChannel = true;
+      }
+    }
+    return containsDeliverChannel;
   }
 }
