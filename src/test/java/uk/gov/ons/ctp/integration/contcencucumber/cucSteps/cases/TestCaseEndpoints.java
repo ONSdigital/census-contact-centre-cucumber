@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
+import cucumber.api.java.Before;
+import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
@@ -12,7 +14,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -23,8 +27,20 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import uk.gov.ons.ctp.common.error.CTPException;
+import uk.gov.ons.ctp.common.event.EventPublisher.Channel;
+import uk.gov.ons.ctp.common.event.EventPublisher.EventType;
+import uk.gov.ons.ctp.common.event.EventPublisher.Source;
+import uk.gov.ons.ctp.common.event.model.Header;
+import uk.gov.ons.ctp.common.event.model.RespondentRefusalDetails;
+import uk.gov.ons.ctp.common.event.model.RespondentRefusalEvent;
+import uk.gov.ons.ctp.common.event.model.RespondentRefusalPayload;
+import uk.gov.ons.ctp.common.rabbit.RabbitHelper;
 import uk.gov.ons.ctp.integration.contactcentresvc.representation.CaseDTO;
 import uk.gov.ons.ctp.integration.contactcentresvc.representation.FulfilmentDTO;
+import uk.gov.ons.ctp.integration.contactcentresvc.representation.Reason;
+import uk.gov.ons.ctp.integration.contactcentresvc.representation.RefusalRequestDTO;
+import uk.gov.ons.ctp.integration.contactcentresvc.representation.ResponseDTO;
 import uk.gov.ons.ctp.integration.contcencucumber.cucSteps.ResetMockCaseApiAndPostCasesBase;
 import uk.gov.ons.ctp.integration.eqlaunch.crypto.Codec;
 import uk.gov.ons.ctp.integration.eqlaunch.crypto.EQJOSEProvider;
@@ -32,20 +48,33 @@ import uk.gov.ons.ctp.integration.eqlaunch.crypto.KeyStore;
 
 public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
+  private static final Logger log = LoggerFactory.getLogger(TestCaseEndpoints.class);
+  private static final String RABBIT_EXCHANGE = "events";
+
   private String caseId;
   private String uprn;
+  private RefusalRequestDTO refusalDTO;
+  private ResponseDTO responseDTO;
+  private Reason reason = RefusalFixture.A_REASON;
+  private String agentId = RefusalFixture.AN_AGENT_ID;
   private CaseDTO caseDTO;
   private List<CaseDTO> caseDTOList;
   private Exception exception;
-  private static final Logger log = LoggerFactory.getLogger(TestCaseEndpoints.class);
   private String ccSmokeTestUrl;
   private String mockCaseSvcSmokeTestUrl;
   private String telephoneEndpointUrl;
   private String telephoneEndpointBody1;
   private String telephoneEndpointBody2;
+  private RabbitHelper rabbit;
+  private String queueName;
 
   @Value("${keystore}")
   private String keyStore;
+
+  @Before
+  public void setup() throws Exception {
+    rabbit = RabbitHelper.instance(RABBIT_EXCHANGE);
+  }
 
   @Given("I am about to do a smoke test by going to a contact centre endpoint")
   public void i_am_about_to_do_a_smoke_test_by_going_to_a_contact_centre_endpoint() {
@@ -162,6 +191,7 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
   @Then("An error is thrown and no case is returned {string}")
   public void an_error_is_thrown_and_no_case_is_returned(String httpError) {
+    assertNotNull("An error was expected, but it succeeded", exception);
     assertTrue(
         "The correct http status must be returned " + httpError,
         exception.getMessage().trim().contains(httpError));
@@ -416,6 +446,80 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
     assertEquals("Must have the correct region code", "GB-ENG", result1.get("region_code"));
   }
 
+  @And("an empty queue exists for sending Refusal events")
+  public void an_empty_queue_exists_for_sending_Refusal_events() throws CTPException {
+    EventType eventType = EventType.valueOf("REFUSAL_RECEIVED");
+    log.info("Creating queue for events of type: '" + eventType + "'");
+    queueName = rabbit.createQueue(eventType);
+    log.info("Flushing queue: '" + queueName + "'");
+    rabbit.flushQueue(queueName);
+  }
+
+  @And("a Refusal event is sent with type {string}")
+  public void a_Refusal_event_is_sent(String type) throws CTPException {
+    log.info("Check that a Refusal event has been sent");
+    RespondentRefusalEvent event =
+        (RespondentRefusalEvent) rabbit.getMessage(queueName, RespondentRefusalEvent.class, 2_000L);
+
+    assertNotNull(event);
+    Header header = event.getEvent();
+    assertEquals(EventType.REFUSAL_RECEIVED, header.getType());
+    assertEquals(Source.CONTACT_CENTRE_API, header.getSource());
+    assertEquals(Channel.CC, header.getChannel());
+
+    RespondentRefusalPayload payload = event.getPayload();
+    assertNotNull(payload);
+    RespondentRefusalDetails details = payload.getRefusal();
+    assertEquals(type, details.getType());
+    log.info("Verifying refusal event details");
+    assertEquals(RefusalFixture.compactAddress(), details.getAddress());
+    assertEquals(RefusalFixture.contact(), details.getContact());
+    assertEquals(RefusalFixture.SOME_NOTES, details.getReport());
+    assertEquals(agentId, details.getAgentId());
+    assertEquals(UUID.fromString(caseId), details.getCollectionCase().getId());
+  }
+
+  @When("I Refuse a case")
+  public void i_Refuse_a_case() {
+    final UriComponentsBuilder builder =
+        UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
+            .port(ccBasePort)
+            .pathSegment("cases")
+            .pathSegment(caseId)
+            .pathSegment("refusal");
+    try {
+      responseDTO =
+          getRestTemplate()
+              .postForObject(builder.build().encode().toUri(), refusalDTO, ResponseDTO.class);
+    } catch (HttpClientErrorException httpClientErrorException) {
+      this.exception = httpClientErrorException;
+    } catch (HttpServerErrorException httpServerErrorException) {
+      this.exception = httpServerErrorException;
+    }
+  }
+
+  @And("I supply a {string} reason for Refusal")
+  public void i_supply_a_reason_for_Refusal(String reason) {
+    this.reason = StringUtils.isBlank(reason) ? null : Reason.valueOf(reason);
+  }
+
+  @And("I supply an {string} agentId for Refusal")
+  public void i_supply_an_agentId_for_Refusal(String agentId) {
+    this.agentId = agentId;
+  }
+
+  @And("I supply the Refusal information")
+  public void i_supply_the_Refusal_information() {
+    this.refusalDTO = createRefusalRequest();
+  }
+
+  @Then("the call succeeded and responded with the supplied case ID")
+  public void the_call_succeeded_and_responded_with_the_supplied_case_ID() {
+    assertNotNull("Response must not be null", responseDTO);
+    assertNotNull("Response date/time must not be null", responseDTO.getDateTime());
+    assertTrue("Response ID must match case ID", caseId.equalsIgnoreCase(responseDTO.getId()));
+  }
+
   private HttpStatus checkContactCentreRunning() {
     log.info("Entering checkContactCentreRunning method");
     final UriComponentsBuilder builder =
@@ -473,5 +577,9 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
     telephoneEndpointUrl = builder.build().encode().toUri().toString();
     log.info("Using the following endpoint to launch EQ: " + telephoneEndpointUrl);
     return getRestTemplate().getForEntity(builder.build().encode().toUri(), String.class);
+  }
+
+  private RefusalRequestDTO createRefusalRequest() {
+    return RefusalFixture.createRequest(caseId, agentId, reason);
   }
 }

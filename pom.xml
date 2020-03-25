@@ -16,18 +16,6 @@
 	</parent>
 	<dependencies>
 		<dependency>
-			<groupId>uk.gov.ons.ctp.integration.common</groupId>
-			<artifactId>framework</artifactId>
-			<version>0.0.51</version>
-		</dependency>
-
-		<dependency>
-			<groupId>uk.gov.ons.ctp.integration.common</groupId>
-			<artifactId>event-publisher</artifactId>
-			<version>0.0.22</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
@@ -160,16 +148,26 @@
 
 		<!-- ONS libraries -->
 
+		<dependency>
+			<groupId>uk.gov.ons.ctp.integration.common</groupId>
+			<artifactId>framework</artifactId>
+			<version>0.0.51</version>
+		</dependency>
+
+		<dependency>
+			<groupId>uk.gov.ons.ctp.integration.common</groupId>
+			<artifactId>event-publisher</artifactId>
+			<version>0.0.25</version>
+		</dependency>
 
 	    <dependency>
 			<groupId>uk.gov.ons.ctp.integration</groupId>
 			<artifactId>contactcentreserviceapi</artifactId>
-			<version>0.0.69</version>
+			<version>0.0.72</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
-			<version>5.1.5.RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -191,8 +189,14 @@
 			<version>1.0.3</version>
 		</dependency>
 
-		<!-- ONS END -->
+		<dependency>
+			<groupId>uk.gov.ons.ctp.integration.common</groupId>
+			<artifactId>cucumber-common</artifactId>
+			<version>0.0.12</version>
+			<scope>test</scope>
+		</dependency>
 
+		<!-- ONS END -->
 
 	</dependencies>
 
