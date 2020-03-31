@@ -1,14 +1,8 @@
 package uk.gov.ons.ctp.integration.contcencucumber.cucSteps.fulfilments;
 
-import static org.junit.Assert.*;
-
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -20,6 +14,13 @@ import uk.gov.ons.ctp.integration.common.product.model.Product;
 import uk.gov.ons.ctp.integration.contactcentresvc.representation.*;
 import uk.gov.ons.ctp.integration.contcencucumber.cucSteps.ResetMockCaseApiAndPostCasesBase;
 import uk.gov.ons.ctp.integration.contcencucumber.main.service.ProductService;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
 
 public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
@@ -280,10 +281,6 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
     if (caseDTO.getCaseType().equalsIgnoreCase("HI")) {
       isIndividual = true;
       caseDTO.setCaseType("HH");
-    }
-    if (caseDTO.getCaseType().equalsIgnoreCase("CI")) {
-      isIndividual = true;
-      caseDTO.setCaseType("CE");
     }
     return isIndividual;
   }
