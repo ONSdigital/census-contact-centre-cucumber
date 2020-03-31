@@ -48,7 +48,7 @@ Feature: Test Contact centre Fulfilments Endpoints
       | "70, Magdalen Street"               |"100040222798"  | "3305e937-6fb1-4ce1-9d4c-077f147789de"   |
       | "33 Serge Court"                    |"100041131297"  | "03f58cb5-9af4-4d40-9d60-c124c5bddfff"   |
 
-  Scenario Outline: [CR-T269, CR-T273, CR-T293, CR-T306, CR-T319, CR-T322] I want to verify that Fulfilments
+  Scenario Outline: [CR-T269, CR-T273, CR-T293, CR-T306, CR-T319, CR-T322] PENDING I want to verify that Fulfilments
                     are provided from a CC addvisor UPRN
     Given I have a valid UPRN provided by a CC advisor <uprn>
     When I Search cases By UPRN
@@ -65,4 +65,3 @@ Feature: Test Contact centre Fulfilments Endpoints
       |  ""          |"100440222798"  | "3305e937-6fb5-4ce1-9d4c-077f147789de"   | "CE"      | "W"    | "SMS"            | "false"    |
       |  ""          |"100540222798"  | "3305e937-6fb6-4ce1-9d4c-077f147789de"   | "SPG"     | "N"    | "SMS"            | "false"    |
       |  ""          |"100640222798"  | "3305e937-6fb7-4ce1-9d4c-077f147789de"   | "SPG"     | "N"    | "SMS"            | "true"     |
-
