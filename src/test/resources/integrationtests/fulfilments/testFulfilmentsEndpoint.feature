@@ -57,10 +57,12 @@ Feature: Test Contact centre Fulfilments Endpoints
     Then the correct fulfilments are returned for my case <case_type> <region> <delivery_channel> <individual>
 
     Examples:
-      | uprn           | case_id                                  | case_type | region | delivery_channel | individual |
-      |"100140222798"  | "3305e937-6fb2-4ce1-9d4c-077f147789de"   | "HH"      | "E"    | "SMS"            | "false"    |
-      |"100240222798"  | "3305e937-6fb3-4ce1-9d4c-077f147789de"   | "CE"      | "E"    | "SMS"            | "true"     |
-      |"100340222798"  | "3305e937-6fb4-4ce1-9d4c-077f147789de"   | "HI"      | "W"    | "SMS"            | "true"     |
-      |"100440222798"  | "3305e937-6fb5-4ce1-9d4c-077f147789de"   | "CE"      | "W"    | "SMS"            | "false"    |
-      |"100540222798"  | "3305e937-6fb6-4ce1-9d4c-077f147789de"   | "SPG"     | "N"    | "SMS"            | "false"    |
-      |"100640222798"  | "3305e937-6fb7-4ce1-9d4c-077f147789de"   | "SPG"     | "N"    | "SMS"            | "true"     |
+    Examples:
+      | Pending Test | uprn           | case_id                                  | case_type | region | delivery_channel | individual |
+      |  ""          |"100140222798"  | "3305e937-6fb2-4ce1-9d4c-077f147789de"   | "HH"      | "E"    | "SMS"            | "false"    |
+      |  "true"      |"100240222798"  | "3305e937-6fb3-4ce1-9d4c-077f147789de"   | "CE"      | "E"    | "SMS"            | "true"     |
+      |  ""          |"100340222798"  | "3305e937-6fb4-4ce1-9d4c-077f147789de"   | "HI"      | "W"    | "SMS"            | "true"     |
+      |  ""          |"100440222798"  | "3305e937-6fb5-4ce1-9d4c-077f147789de"   | "CE"      | "W"    | "SMS"            | "false"    |
+      |  ""          |"100540222798"  | "3305e937-6fb6-4ce1-9d4c-077f147789de"   | "SPG"     | "N"    | "SMS"            | "false"    |
+      |  ""          |"100640222798"  | "3305e937-6fb7-4ce1-9d4c-077f147789de"   | "SPG"     | "N"    | "SMS"            | "true"     |
+
