@@ -10,21 +10,23 @@ Feature: Test Contact centre Case Endpoints
     When I Search cases By case ID <caseEvents>
     Then the correct case for my case ID is returned <uprn>
     And the correct number of events are returned <caseEvents> <noCaseEvents>
+    And the establishment UPRN is <estabUprn>
+    And the secure establishment is set to <secure>
 
-    Examples: 
-      | caseId                                 | uprn       | caseEvents | noCaseEvents |
-      | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | 1347459999 | "true"     |            2 |
-      | "3305e937-6fb1-4ce1-9d4c-077f147789ac" | 1347459999 | "true"     |            1 |
-      | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | 1347459999 | "false"    |            0 |
-      | "3305e937-6fb1-4ce1-9d4c-077f147789ac" | 1347459999 | "false"    |            0 |
-      | "03f58cb5-9af4-4d40-9d60-c124c5bddf09" | 1347459999 | "true"     |            0 |
+    Examples:
+      | caseId                                 | uprn       | caseEvents | noCaseEvents | estabUprn      | secure  |
+      | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | 1347459999 | "true"     |            2 | "334111111111" | "true"  |
+      | "3305e937-6fb1-4ce1-9d4c-077f147789ac" | 1347459999 | "true"     |            1 | ""             | "false" |
+      | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | 1347459999 | "false"    |            0 | "334111111111" | "true"  |
+      | "3305e937-6fb1-4ce1-9d4c-077f147789ac" | 1347459999 | "false"    |            0 | ""             | "false" |
+      | "03f58cb5-9af4-4d40-9d60-c124c5bddf09" | 1347459999 | "true"     |            0 | ""             | "false" |
 
   Scenario Outline: [CR-T135] I want to verify that the case search by invalid case ID works
     Given I have an invalid case ID <caseId>
     When I Search for cases By case ID
     Then An error is thrown and no case is returned <httpError>
 
-    Examples: 
+    Examples:
       | caseId                                 | httpError |
       | "40074ef9-2a0c-4a5c-bb69-d3fc5bfa10dc" | "500"     |
       | "40174ef9-2a0c-4a5c-bb69-d3fc5bfa10dc" | "500"     |
@@ -36,7 +38,7 @@ Feature: Test Contact centre Case Endpoints
     When I Search cases By UPRN
     Then the correct cases for my UPRN are returned <case_ids>
 
-    Examples: 
+    Examples:
       | uprn         | case_ids                                                                                                         |
       | "1347459999" | "3305e937-6fb1-4ce1-9d4c-077f147789ab,3305e937-6fb1-4ce1-9d4c-077f147789ac,03f58cb5-9af4-4d40-9d60-c124c5bddf09" |
 
@@ -45,7 +47,7 @@ Feature: Test Contact centre Case Endpoints
     When I Search cases By invalid UPRN
     Then no cases for my UPRN are returned <httpError>
 
-    Examples: 
+    Examples:
       | uprn         | httpError |
       | "1347459998" | "404"     |
       | "abcdefghik" | "400"     |
@@ -57,7 +59,7 @@ Feature: Test Contact centre Case Endpoints
     When I Refuse a case
     Then the call succeeded and responded with the supplied case ID
 
-    Examples: 
+    Examples:
       | caseId                                 |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ab" |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ac" |
@@ -73,7 +75,7 @@ Feature: Test Contact centre Case Endpoints
     Then the call succeeded and responded with the supplied case ID
     And a Refusal event is sent with type <type>
 
-    Examples: 
+    Examples:
       | caseId                                 | reason          | type                    |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | "HARD"          | "HARD_REFUSAL"          |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | "EXTRAORDINARY" | "EXTRAORDINARY_REFUSAL" |
@@ -85,7 +87,7 @@ Feature: Test Contact centre Case Endpoints
     When I Refuse a case
     Then An error is thrown and no case is returned <httpError>
 
-    Examples: 
+    Examples:
       | caseId                                 | reason | httpError |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | ""     | "400"     |
 
@@ -96,7 +98,7 @@ Feature: Test Contact centre Case Endpoints
     When I Refuse a case
     Then An error is thrown and no case is returned <httpError>
 
-    Examples: 
+    Examples:
       | caseId                                 | agentId  | httpError |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | ""       | "400"     |
       | "3305e937-6fb1-4ce1-9d4c-077f147789ab" | "ABC"    | "400"     |
@@ -108,7 +110,7 @@ Feature: Test Contact centre Case Endpoints
     When I Refuse a case
     Then An error is thrown and no case is returned <httpError>
 
-    Examples: 
+    Examples:
       | caseId                                 | httpError |
       | "NOTKNOWN"                             | "400"     |
       | "XX474ef9-2a0c-4a5c-bb69-d3fc5bfa10dc" | "400"     |
