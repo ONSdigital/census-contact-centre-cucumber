@@ -2,25 +2,10 @@ package uk.gov.ons.ctp.integration.contcencucumber.cucSteps.fulfilments;
 
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import com.godaddy.logging.Logger;
-import com.godaddy.logging.LoggerFactory;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -30,33 +15,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.ons.ctp.common.error.CTPException;
-import uk.gov.ons.ctp.common.event.model.*;
-import uk.gov.ons.ctp.common.rabbit.RabbitHelper;
-import uk.gov.ons.ctp.common.util.TimeoutParser;
 import uk.gov.ons.ctp.common.event.EventPublisher.EventType;
-import uk.gov.ons.ctp.common.event.model.Address;
-import uk.gov.ons.ctp.common.event.model.FulfilmentPayload;
-import uk.gov.ons.ctp.common.event.model.FulfilmentRequest;
-import uk.gov.ons.ctp.common.event.model.FulfilmentRequestedEvent;
-import uk.gov.ons.ctp.common.event.model.Header;
+import uk.gov.ons.ctp.common.event.model.*;
 import uk.gov.ons.ctp.common.model.UniquePropertyReferenceNumber;
 import uk.gov.ons.ctp.common.rabbit.RabbitHelper;
 import uk.gov.ons.ctp.common.util.TimeoutParser;
 import uk.gov.ons.ctp.integration.common.product.model.Product;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.AddressDTO;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.AddressQueryResponseDTO;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.CaseDTO;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.CaseType;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.FulfilmentDTO;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.PostalFulfilmentRequestDTO;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.Region;
-import uk.gov.ons.ctp.integration.contactcentresvc.representation.ResponseDTO;
+import uk.gov.ons.ctp.integration.contactcentresvc.representation.*;
 import uk.gov.ons.ctp.integration.contcencucumber.cucSteps.ResetMockCaseApiAndPostCasesBase;
 import uk.gov.ons.ctp.integration.contcencucumber.main.service.ProductService;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.net.URI;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -81,13 +51,6 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
   private URI productsUrl;
   private List<CaseDTO> listOfCasesWithUprn;
   private List<Product> listOfProducts;
-  private RabbitHelper rabbit;
-  private String queueName;
-  private FulfilmentRequestedEvent fulfilmentRequestedEvent;
-  private Header fulfilmentRequestedHeader;
-  private FulfilmentPayload fulfilmentPayload;
-  private String caseId;
-  private String productCodeSelected;
 
   @Autowired private ProductService productService;
   private URI fulfilmentByPostUrl;
@@ -689,94 +652,6 @@ public class TestFulfilmentsEndpoints extends ResetMockCaseApiAndPostCasesBase {
       fail();
       System.exit(0);
     }
-  }
-
-  @Then(
-      "a fulfilment request event is emitted to RM for UPRN = {string} addressType = {string} individual = {string} and region = {string}")
-  public void
-      a_fulfilment_request_event_is_emitted_to_RM_for_UPRN_addressType_individual_and_region(
-          String expectedUprn, String expectedAddressType, String individual, String expectedRegion)
-          throws CTPException {
-    log.info(
-        "Check that a FULFILMENT_REQUESTED event has now been put on the empty queue, named "
-            + queueName
-            + ", ready to be picked up by RM");
-
-    String clazzName = "FulfilmentRequestedEvent.class";
-    String timeout = "2000ms";
-
-    log.info(
-        "Getting from queue: '"
-            + queueName
-            + "' and converting to an object of type '"
-            + clazzName
-            + "', with timeout of '"
-            + timeout
-            + "'");
-
-    fulfilmentRequestedEvent =
-        (FulfilmentRequestedEvent)
-            rabbit.getMessage(
-                queueName,
-                FulfilmentRequestedEvent.class,
-                TimeoutParser.parseTimeoutString(timeout));
-
-    assertNotNull(fulfilmentRequestedEvent);
-    fulfilmentRequestedHeader = fulfilmentRequestedEvent.getEvent();
-    assertNotNull(fulfilmentRequestedHeader);
-    fulfilmentPayload = fulfilmentRequestedEvent.getPayload();
-    assertNotNull(fulfilmentPayload);
-
-    String expectedType = "FULFILMENT_REQUESTED";
-    String expectedSource = "CONTACT_CENTRE_API";
-    String expectedChannel = "CC";
-    String expectedFulfilmentCode = productCodeSelected;
-    String expectedCaseId = caseId;
-
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'type'",
-        expectedType,
-        fulfilmentRequestedHeader.getType().name());
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'source'",
-        expectedSource,
-        fulfilmentRequestedHeader.getSource().name());
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'channel'",
-        expectedChannel,
-        fulfilmentRequestedHeader.getChannel().name());
-    assertNotNull(fulfilmentRequestedHeader.getDateTime());
-    assertNotNull(fulfilmentRequestedHeader.getTransactionId());
-
-    FulfilmentRequest fulfilmentRequest = fulfilmentPayload.getFulfilmentRequest();
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'fulfilmentCode'",
-        expectedFulfilmentCode,
-        fulfilmentRequest.getFulfilmentCode());
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'caseId'",
-        expectedCaseId,
-        fulfilmentRequest.getCaseId());
-    Address address = fulfilmentRequest.getAddress();
-    // SPG and CE indiv product requests do not need an indiv id creating (see CaseServiceImpl, line
-    // 435
-    if (individual.equals("true") && address.getAddressType().equals("HH")) {
-      assertNotNull(fulfilmentRequest.getIndividualCaseId());
-    } else {
-      assertNull(fulfilmentRequest.getIndividualCaseId());
-    }
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'uprn'",
-        expectedUprn,
-        address.getUprn());
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'addressType'",
-        expectedAddressType,
-        address.getAddressType());
-    assertEquals(
-        "The FulfilmentRequested event contains an incorrect value of 'region'",
-        expectedRegion,
-        address.getRegion());
   }
 
   private ResponseEntity<List<CaseDTO>> getCaseForUprn(String uprn) {
