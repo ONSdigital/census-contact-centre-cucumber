@@ -66,9 +66,9 @@ Feature: Test Contact Centre, Assisted Digital case endpoints
     Then the call succeeded and responded with the supplied case ID
 
     Examples:
-      | caseId                                 |
-      | "3305e937-6fb1-4ce1-9d4c-077f147789ab" |
-      | "3305e937-6fb1-4ce1-9d4c-077f147789ac" |
+      | caseId                               |
+      | 3305e937-6fb1-4ce1-9d4c-077f147789ab |
+      | 3305e937-6fb1-4ce1-9d4c-077f147789ac |
 
   @CC @RefusalReasonAcceptedAndEventPosted
   Scenario Outline: I want to verify that a valid reason for Refusal is accepted and event posted
@@ -100,7 +100,7 @@ Feature: Test Contact Centre, Assisted Digital case endpoints
   @CC
   Scenario Outline: I want to verify that a Refusal without a valid agentId is rejected
     Given I have a valid case ID <caseId>
-    And I supply an <agentId> agentId for Refusal
+    And I supply an "<agentId>" agentId for Refusal
     And I supply the Refusal information
     When I Refuse a case
     Then An error is thrown and no case is returned <httpError>
@@ -200,14 +200,32 @@ Feature: Test Contact Centre, Assisted Digital case endpoints
      Then Getting launch URL results in a 202 status and content containing "Unable to provide launch URL/UAC at present"
 
   @CC @CR-T381
-  Scenario: CR-T381 Get latest case from Cache (GetCaseByUPRN)
-    Given that new cached cases have been created for a new address but are not yet in RM
-    When  I Search cases By UPRN
-    Then  the correct case for my UPRN is returned "3333334"
+  Scenario Outline: CR-T381 Get latest case from Cache (GetCaseByUPRN)
+    Given the case does not exist in the cache "<uprn>"
+    And the case exists in RM "<uprn>" "<case_id>"
+    When the case address details are modified by a member of CC staff
+    And the case modified even is sent to RM but RM does not immediately action it
+    When the call is made to fetch the case again by UPRN "<uprn>"
+    Then the modified case is returned from the cache "<uprn>" "<case_id>"
+
+    Examples:
+      | uprn         | case_id                                  |
+      | 100041131297 | 03f58cb5-9af4-4d40-9d60-c124c5bddfff     |
+      | 100041045599 | 3305e937-6fb1-4ce1-9d4c-077f147789bb     |
+      | 10013041069  | 3305e937-6fb1-4ce1-9d4c-077f147789dd     |
 
   @CC @CR-T385
-  Scenario: CR-T385 Get latest case from Cache (GetCaseByID)
-    Given that a new cached case has been created for a new address but is not yet in RM
-    When  I Search for cases By case ID
-    Then  the correct case for my case ID is returned
+  Scenario Outline: CR-T385 Get latest case from Cache (GetCaseByID)
+    Given the case does not exist in the cache "<uprn>"
+    And the case exists in RM "<uprn>" "<case_id>"
+    When the case address details are modified by a member of CC staff
+    And the case modified even is sent to RM but RM does not immediately action it
+    When the call is made to fetch the case again by case ID "<case_id>"
+    Then the modified case is returned from the cache "<uprn>" "<case_id>"
+
+    Examples:
+      | uprn         | case_id                                  |
+      | 100041131297 | 03f58cb5-9af4-4d40-9d60-c124c5bddfff     |
+      | 100041045599 | 3305e937-6fb1-4ce1-9d4c-077f147789bb     |
+      | 10013041069  | 3305e937-6fb1-4ce1-9d4c-077f147789dd     |
 

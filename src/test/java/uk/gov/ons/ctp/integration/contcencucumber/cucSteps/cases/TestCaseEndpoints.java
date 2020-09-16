@@ -25,6 +25,7 @@ import io.swagger.client.model.CaseType;
 import io.swagger.client.model.DeliveryChannel;
 import io.swagger.client.model.EstabType;
 import io.swagger.client.model.InvalidateCaseRequestDTO;
+import io.swagger.client.model.ModifyCaseRequestDTO;
 import io.swagger.client.model.NewCaseRequestDTO;
 import io.swagger.client.model.RefusalRequestDTO;
 import io.swagger.client.model.RefusalRequestDTO.ReasonEnum;
@@ -38,6 +39,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -64,6 +66,7 @@ import uk.gov.ons.ctp.common.event.EventPublisher.Channel;
 import uk.gov.ons.ctp.common.event.EventPublisher.EventType;
 import uk.gov.ons.ctp.common.event.EventPublisher.Source;
 import uk.gov.ons.ctp.common.event.model.Address;
+import uk.gov.ons.ctp.common.event.model.AddressModifiedEvent;
 import uk.gov.ons.ctp.common.event.model.AddressNotValid;
 import uk.gov.ons.ctp.common.event.model.AddressNotValidEvent;
 import uk.gov.ons.ctp.common.event.model.AddressNotValidPayload;
@@ -81,11 +84,13 @@ import uk.gov.ons.ctp.common.util.TimeoutParser;
 import uk.gov.ons.ctp.integration.caseapiclient.caseservice.model.CaseContainerDTO;
 import uk.gov.ons.ctp.integration.contcencucumber.cloud.CachedCase;
 import uk.gov.ons.ctp.integration.contcencucumber.cucSteps.ResetMockCaseApiAndPostCasesBase;
+import uk.gov.ons.ctp.integration.contcencucumber.data.ExampleData;
 import uk.gov.ons.ctp.integration.eqlaunch.crypto.Codec;
 import uk.gov.ons.ctp.integration.eqlaunch.crypto.EQJOSEProvider;
 import uk.gov.ons.ctp.integration.eqlaunch.crypto.KeyStore;
 
 public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
+
   private static final Logger log = LoggerFactory.getLogger(TestCaseEndpoints.class);
   private static final String RABBIT_EXCHANGE = "events";
   private static final long RABBIT_TIMEOUT = 2000L;
@@ -174,13 +179,17 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
   @When("I Search cases By case ID {string}")
   public void i_Search_cases_By_case_ID(String showCaseEvents) {
+    caseDTO = searchCasesByCaseID(caseId, showCaseEvents);
+  }
+
+  private CaseDTO searchCasesByCaseID(final String caseId, final String showCaseEvents) {
     final UriComponentsBuilder builder =
         UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
             .port(ccBasePort)
             .pathSegment("cases")
             .pathSegment(caseId)
             .queryParam("caseEvents", showCaseEvents);
-    caseDTO = getRestTemplate().getForObject(builder.build().encode().toUri(), CaseDTO.class);
+    return getRestTemplate().getForObject(builder.build().encode().toUri(), CaseDTO.class);
   }
 
   @Then("the correct case for my case ID is returned {int}")
@@ -1188,6 +1197,75 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
     }
   }
 
+  @When("the case address details are modified by a member of CC staff")
+  public void the_case_address_details_are_modified_by_a_member_of_CC_staff() {
+    final ModifyCaseRequestDTO modifyCaseRequest =
+        ExampleData.createModifyCaseRequest(caseDTO.getId());
+    putCaseForID(modifyCaseRequest);
+  }
+
+  private void putCaseForID(ModifyCaseRequestDTO modifyCaseRequest) {
+    final UriComponentsBuilder builder =
+        UriComponentsBuilder.fromHttpUrl(ccBaseUrl)
+            .port(ccBasePort)
+            .pathSegment("cases")
+            .pathSegment(caseId);
+
+    try {
+      getRestTemplate().put(builder.build().encode().toUri(), modifyCaseRequest);
+    } catch (HttpClientErrorException httpClientErrorException) {
+      log.debug(
+          "A HttpClientErrorException has occurred when trying to modify a case using putCaseById endpoint in contact centre: "
+              + httpClientErrorException.getMessage());
+    }
+  }
+
+  @And("the case modified even is sent to RM but RM does not immediately action it")
+  public void the_case_modified_event_is_sent_to_RM_and_RM_does_immediately_action_it()
+      throws ClassNotFoundException, CTPException {
+    log.info(
+        "Check that an event of type ADDRESS_MODIFIED has now been put on the empty queue, named {}, ready to be picked up by RM",
+        queueName);
+
+    log.info(
+        "Getting from queue: '{}' and converting to an object of type '{}', with timeout of '{}'",
+        queueName,
+        AddressModifiedEvent.class,
+        RABBIT_TIMEOUT);
+
+    AddressModifiedEvent addressModifiedEvent =
+        rabbit.getMessage(queueName, AddressModifiedEvent.class, RABBIT_TIMEOUT);
+
+    assertNotNull(addressModifiedEvent);
+    Header addressModifiedHeader = addressModifiedEvent.getEvent();
+    assertNotNull(addressModifiedHeader);
+    assertEquals("ADDRESS_MODIFIED", addressModifiedHeader.getType().toString());
+
+    CaseContainerDTO caseContainerInRM = ExampleData.createCaseContainer(caseId, uprnStr);
+    List<CaseContainerDTO> postCaseList = Collections.singletonList(caseContainerInRM);
+    postCasesToMockService(postCaseList);
+  }
+
+  private void postCasesToMockService(final List<CaseContainerDTO> caseList) {
+    UriComponentsBuilder builder =
+        UriComponentsBuilder.fromHttpUrl(mcsBaseUrl)
+            .port(mcsBasePort)
+            .pathSegment("cases")
+            .pathSegment("data")
+            .pathSegment("cases")
+            .pathSegment("save");
+    for (CaseContainerDTO caseContainer : caseList) {
+      final List<CaseContainerDTO> postCaseList = Collections.singletonList(caseContainer);
+      try {
+        getAuthenticationFreeRestTemplate()
+            .postForObject(builder.build().encode().toUri(), postCaseList, HashMap.class);
+      } catch (HttpClientErrorException ex) {
+        log.warn("Exception thrown by mock case service - case: " + caseContainer.getId());
+        throw new RuntimeException(ex);
+      }
+    }
+  }
+
   @Given("that a new cached case has been created for a new address but is not yet in RM")
   public void createNewCachedCase() {
     NewCaseRequestDTO newCaseRequest = createNewCaseRequestDTO();
@@ -1275,5 +1353,56 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
     long actualInMillis = dateTime.getTime();
     assertTrue(actualInMillis + " not after " + minAllowed, actualInMillis >= minAllowed);
     assertTrue(actualInMillis + " not before " + maxAllowed, actualInMillis <= maxAllowed);
+  }
+
+  @Given("the case does not exist in the cache {string}")
+  public void theCaseDoesNotExistInTheCache(final String uprnStr) throws CTPException {
+    this.uprnStr = uprnStr;
+    cachedCasesDoNotAlreadyExist();
+    assertEquals(
+        "No cached case should be found for UPRN: " + uprnStr,
+        0,
+        dataRepo.readCachedCasesByUprn(UniquePropertyReferenceNumber.create(uprnStr)).size());
+  }
+
+  @And("the case exists in RM {string} {string}")
+  public void theCaseExistsInRM(final String uprn, final String caseId) {
+    ResponseEntity<List<CaseDTO>> caseServiceResponse = getCaseForUprn(uprn);
+    List<CaseDTO> caseDTOList =
+        Objects.requireNonNull(caseServiceResponse.getBody())
+            .stream()
+            .filter(ccServiceCase -> ccServiceCase.getId().equals(UUID.fromString(uprn)))
+            .collect(Collectors.toList());
+    assertEquals("Case List Size must be 1", 1, caseDTOList.size());
+    caseDTO = caseDTOList.get(0);
+  }
+
+  @When("the call is made to fetch the case again by UPRN {string}")
+  public void theCallIsMadeToFetchTheCaseAgainByUPRN(final String uprnStr) {
+    this.uprnStr = uprnStr;
+    ResponseEntity<List<CaseDTO>> caseResponseList = getCaseForUprn(uprnStr);
+    assertTrue("One or more cases have been returned", caseResponseList.getBody().size() > 0);
+  }
+
+  @When("the call is made to fetch the case again by case ID {string}")
+  public void theCallIsMadeToFetchTheCaseAgainByCaseID(final String caseId) {
+    this.caseId = caseId;
+    caseDTO = searchCasesByCaseID(caseId, "false");
+  }
+
+  @Then("the modified case is returned from the cache {string} {string}")
+  public void theModifiedCaseIsReturnedFromTheCache(final String uprnStr, final String caseId)
+      throws CTPException {
+    List cases =
+        dataRepo
+            .readCachedCasesByUprn(UniquePropertyReferenceNumber.create(uprnStr))
+            .stream()
+            .filter(cccase -> cccase.getId().equals(caseId))
+            .collect(Collectors.toList());
+    assertEquals("One case should be returned for case: " + caseId, 1, cases.size());
+    assertEquals(
+        "The case in the dataRepo should be the one returned from the CC Service",
+        cases.get(0),
+        caseDTO);
   }
 }
