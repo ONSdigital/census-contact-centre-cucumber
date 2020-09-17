@@ -202,6 +202,7 @@ Feature: Test Contact Centre, Assisted Digital case endpoints
   @CC @CR-T381
   Scenario Outline: CR-T381 Get latest case from Cache (GetCaseByUPRN)
     Given the case does not exist in the cache "<uprn>"
+    And an empty queue exists for sending "ADDRESS_MODIFIED" events
     And the case exists in RM "<uprn>" "<case_id>"
     When the case address details are modified by a member of CC staff
     And the case modified even is sent to RM but RM does not immediately action it
@@ -210,13 +211,12 @@ Feature: Test Contact Centre, Assisted Digital case endpoints
 
     Examples:
       | uprn         | case_id                                  |
-      | 100041131297 | 03f58cb5-9af4-4d40-9d60-c124c5bddfff     |
-      | 100041045599 | 3305e937-6fb1-4ce1-9d4c-077f147789bb     |
-      | 10013041069  | 3305e937-6fb1-4ce1-9d4c-077f147789dd     |
+      | 1347459999   | 3305e937-6fb1-4ce1-9d4c-077f147789ac     |
 
   @CC @CR-T385
   Scenario Outline: CR-T385 Get latest case from Cache (GetCaseByID)
     Given the case does not exist in the cache "<uprn>"
+    And an empty queue exists for sending "ADDRESS_MODIFIED" events
     And the case exists in RM "<uprn>" "<case_id>"
     When the case address details are modified by a member of CC staff
     And the case modified even is sent to RM but RM does not immediately action it
@@ -225,7 +225,5 @@ Feature: Test Contact Centre, Assisted Digital case endpoints
 
     Examples:
       | uprn         | case_id                                  |
-      | 100041131297 | 03f58cb5-9af4-4d40-9d60-c124c5bddfff     |
-      | 100041045599 | 3305e937-6fb1-4ce1-9d4c-077f147789bb     |
-      | 10013041069  | 3305e937-6fb1-4ce1-9d4c-077f147789dd     |
+      | 1347459999   | 3305e937-6fb1-4ce1-9d4c-077f147789ac     |
 
