@@ -3,6 +3,8 @@ package uk.gov.ons.ctp.integration.contcencucumber.data;
 import io.swagger.client.model.CaseType;
 import io.swagger.client.model.EstabType;
 import io.swagger.client.model.ModifyCaseRequestDTO;
+import io.swagger.client.model.NewCaseRequestDTO;
+import io.swagger.client.model.Region;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,5 +46,22 @@ public class ExampleData {
     List<EventDTO> caseEvents = new ArrayList<>();
     caseContainer.setCaseEvents(caseEvents);
     return caseContainer;
+  }
+
+  public static NewCaseRequestDTO createNewCaseRequestDTO() {
+    NewCaseRequestDTO newCaseRequest = new NewCaseRequestDTO();
+    newCaseRequest.setCaseType(CaseType.SPG);
+    newCaseRequest.setAddressLine1("12 Newlands Terrace");
+    newCaseRequest.setAddressLine2("Flatfield");
+    newCaseRequest.setAddressLine3("Brumble");
+    newCaseRequest.setCeOrgName("Claringdon House");
+    newCaseRequest.setCeUsualResidents(13);
+    newCaseRequest.setEstabType(EstabType.ROYAL_HOUSEHOLD);
+    newCaseRequest.setDateTime("2016-11-09T11:44:44.797");
+    newCaseRequest.setUprn("3333334");
+    newCaseRequest.setRegion(Region.E);
+    newCaseRequest.setPostcode("EX2 5WH");
+    newCaseRequest.setTownName("Exeter");
+    return newCaseRequest;
   }
 }

@@ -21,7 +21,6 @@ import cucumber.api.java.en.When;
 import io.swagger.client.model.AddressDTO;
 import io.swagger.client.model.AddressQueryResponseDTO;
 import io.swagger.client.model.CaseDTO;
-import io.swagger.client.model.CaseType;
 import io.swagger.client.model.DeliveryChannel;
 import io.swagger.client.model.EstabType;
 import io.swagger.client.model.InvalidateCaseRequestDTO;
@@ -29,7 +28,6 @@ import io.swagger.client.model.ModifyCaseRequestDTO;
 import io.swagger.client.model.NewCaseRequestDTO;
 import io.swagger.client.model.RefusalRequestDTO;
 import io.swagger.client.model.RefusalRequestDTO.ReasonEnum;
-import io.swagger.client.model.Region;
 import io.swagger.client.model.ResponseDTO;
 import io.swagger.client.model.UACResponseDTO;
 import java.net.URI;
@@ -70,6 +68,7 @@ import uk.gov.ons.ctp.common.event.model.AddressModifiedEvent;
 import uk.gov.ons.ctp.common.event.model.AddressNotValid;
 import uk.gov.ons.ctp.common.event.model.AddressNotValidEvent;
 import uk.gov.ons.ctp.common.event.model.AddressNotValidPayload;
+import uk.gov.ons.ctp.common.event.model.AddressTypeChangedEvent;
 import uk.gov.ons.ctp.common.event.model.CollectionCaseNewAddress;
 import uk.gov.ons.ctp.common.event.model.Header;
 import uk.gov.ons.ctp.common.event.model.NewAddress;
@@ -170,6 +169,16 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
   @Then("I do the smoke test and receive a response of OK from the mock case api service")
   public void i_do_the_smoke_test_and_receive_a_response_of_OK_from_the_mock_case_api_service() {
     checkServiceHealthy(mcsBaseUrl, mcsBasePort, "THE MOCK CASE API SERVICE MAY NOT BE RUNNING ");
+  }
+
+  @Given("an empty queue exists for sending {string} events")
+  public void an_empty_queue_exists_for_sending_events(String eventTypeAsString)
+      throws CTPException {
+    log.info("Creating queue for events of type: '" + eventTypeAsString + "'");
+    EventType eventType = EventType.valueOf(eventTypeAsString);
+    queueName = rabbit.createQueue(eventType);
+    log.info("Flushing queue: '" + queueName + "'");
+    rabbit.flushQueue(queueName);
   }
 
   @Given("I have a valid case ID {string}")
@@ -1201,6 +1210,7 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
   public void the_case_address_details_are_modified_by_a_member_of_CC_staff() {
     final ModifyCaseRequestDTO modifyCaseRequest =
         ExampleData.createModifyCaseRequest(caseDTO.getId());
+    caseId = caseDTO.getId().toString();
     putCaseForID(modifyCaseRequest);
   }
 
@@ -1210,7 +1220,6 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
             .port(ccBasePort)
             .pathSegment("cases")
             .pathSegment(caseId);
-
     try {
       getRestTemplate().put(builder.build().encode().toUri(), modifyCaseRequest);
     } catch (HttpClientErrorException httpClientErrorException) {
@@ -1233,13 +1242,13 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
         AddressModifiedEvent.class,
         RABBIT_TIMEOUT);
 
-    AddressModifiedEvent addressModifiedEvent =
-        rabbit.getMessage(queueName, AddressModifiedEvent.class, RABBIT_TIMEOUT);
+    AddressTypeChangedEvent addressTypeChangedEvent =
+        rabbit.getMessage(queueName, AddressTypeChangedEvent.class, RABBIT_TIMEOUT);
 
-    assertNotNull(addressModifiedEvent);
-    Header addressModifiedHeader = addressModifiedEvent.getEvent();
+    assertNotNull(addressTypeChangedEvent);
+    Header addressModifiedHeader = addressTypeChangedEvent.getEvent();
     assertNotNull(addressModifiedHeader);
-    assertEquals("ADDRESS_MODIFIED", addressModifiedHeader.getType().toString());
+    assertEquals("ADDRESS_TYPE_CHANGED", addressModifiedHeader.getType().toString());
 
     CaseContainerDTO caseContainerInRM = ExampleData.createCaseContainer(caseId, uprnStr);
     List<CaseContainerDTO> postCaseList = Collections.singletonList(caseContainerInRM);
@@ -1268,28 +1277,9 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
 
   @Given("that a new cached case has been created for a new address but is not yet in RM")
   public void createNewCachedCase() {
-    NewCaseRequestDTO newCaseRequest = createNewCaseRequestDTO();
+    NewCaseRequestDTO newCaseRequest = ExampleData.createNewCaseRequestDTO();
     caseDTO = postNewCase(newCaseRequest);
     expectedCaseId = caseDTO.getId();
-  }
-
-  @Given("that new cached cases have been created for a new address but are not yet in RM")
-  public void createNewCachedCases() {
-    NewCaseRequestDTO newCaseRequest1 = createNewCaseRequestDTO();
-    newCaseRequest1.setDateTime("2016-11-09T11:44:44.797");
-    postNewCase(newCaseRequest1);
-    NewCaseRequestDTO newCaseRequest2 = createNewCaseRequestDTO();
-    newCaseRequest2.setDateTime("2017-11-09T11:44:44.797");
-    caseDTO = postNewCase(newCaseRequest2);
-    expectedCaseId = caseDTO.getId();
-    this.uprnStr = caseDTO.getUprn();
-  }
-
-  @Then("the correct case for my UPRN is returned {string}")
-  public void the_correct_case_for_my_UPRN_is_returned(String uprnString) {
-    assertEquals("Expected result set size should be 1", 1, caseDTOList.size());
-    assertEquals("Expected UUID is: " + expectedCaseId, expectedCaseId, caseDTOList.get(0).getId());
-    assertEquals("Expected UPRN is: " + uprnString, uprnString, caseDTOList.get(0).getUprn());
   }
 
   @Then("the correct case for my case ID is returned")
@@ -1323,23 +1313,6 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
     assertTrue(r.getBody(), r.getBody().contains(expectedContent));
   }
 
-  private NewCaseRequestDTO createNewCaseRequestDTO() {
-    NewCaseRequestDTO newCaseRequest = new NewCaseRequestDTO();
-    newCaseRequest.setCaseType(CaseType.SPG);
-    newCaseRequest.setAddressLine1("12 Newlands Terrace");
-    newCaseRequest.setAddressLine2("Flatfield");
-    newCaseRequest.setAddressLine3("Brumble");
-    newCaseRequest.setCeOrgName("Claringdon House");
-    newCaseRequest.setCeUsualResidents(13);
-    newCaseRequest.setEstabType(EstabType.ROYAL_HOUSEHOLD);
-    newCaseRequest.setDateTime("2016-11-09T11:44:44.797");
-    newCaseRequest.setUprn("3333334");
-    newCaseRequest.setRegion(Region.E);
-    newCaseRequest.setPostcode("EX2 5WH");
-    newCaseRequest.setTownName("Exeter");
-    return newCaseRequest;
-  }
-
   private void checkStatus(int httpStatus) {
     HttpStatus status = HttpStatus.valueOf(httpStatus);
     if (httpStatus < 400) {
@@ -1368,11 +1341,10 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
   @And("the case exists in RM {string} {string}")
   public void theCaseExistsInRM(final String uprn, final String caseId) {
     ResponseEntity<List<CaseDTO>> caseServiceResponse = getCaseForUprn(uprn);
-    List<CaseDTO> caseDTOList =
-        Objects.requireNonNull(caseServiceResponse.getBody())
-            .stream()
-            .filter(ccServiceCase -> ccServiceCase.getId().equals(UUID.fromString(uprn)))
-            .collect(Collectors.toList());
+    List<CaseDTO> caseDTOList = Objects.requireNonNull(caseServiceResponse.getBody());
+    //           .stream()
+    // .filter(ccServiceCase -> ccServiceCase.getId().equals(UUID.fromString(caseId)))
+    //           .collect(Collectors.toList());
     assertEquals("Case List Size must be 1", 1, caseDTOList.size());
     caseDTO = caseDTOList.get(0);
   }
@@ -1393,7 +1365,7 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
   @Then("the modified case is returned from the cache {string} {string}")
   public void theModifiedCaseIsReturnedFromTheCache(final String uprnStr, final String caseId)
       throws CTPException {
-    List cases =
+    List<CachedCase> cases =
         dataRepo
             .readCachedCasesByUprn(UniquePropertyReferenceNumber.create(uprnStr))
             .stream()
@@ -1402,7 +1374,7 @@ public class TestCaseEndpoints extends ResetMockCaseApiAndPostCasesBase {
     assertEquals("One case should be returned for case: " + caseId, 1, cases.size());
     assertEquals(
         "The case in the dataRepo should be the one returned from the CC Service",
-        cases.get(0),
-        caseDTO);
+        cases.get(0).getId(),
+        caseDTO.getId().toString());
   }
 }
